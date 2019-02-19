@@ -1,6 +1,6 @@
 {
   "name": "futoji",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "description": "a simple open/close text transformer",
   "repository": "https://github.com/Brecert/futoji.git",
   "author": "brecert",
@@ -20,7 +20,8 @@
   },
   "scripts": {
     "build": "pack build",
-    "test": "mocha --require ts-node/register test/**/*.spec.ts"
+    "test": "mocha --require ts-node/register test/**/*.spec.ts",
+    "publish": "yarn build && git add pkg && git commit -m %npm_package_version% && np --contents=pkg"
   },
   "devDependencies": {
     "@babel/core": "^7.3.3",
