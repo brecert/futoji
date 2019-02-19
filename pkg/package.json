@@ -1,7 +1,7 @@
 {
   "name": "futoji",
   "description": "a formatter for chat clients",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "license": "MIT",
   "esnext": "dist-src/index.js",
   "main": "dist-node/index.js",
