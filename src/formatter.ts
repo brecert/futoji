@@ -15,7 +15,7 @@ interface ITransformer {
   /**
    * If the transformed text is to be transformed again
    */
-  recursive: boolean
+  recursive?: boolean
 
   /**
    * The transform the text into something else
