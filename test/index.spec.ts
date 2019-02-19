@@ -9,9 +9,13 @@ describe('Formatter', function() {
   })
 
   describe('#addFormat()', function() {
-    it('should add the format to formatter', function() {
-      formatter.addFormat('italic', '*', text => `<i>${text}</i>`)
-      expect(formatter.formatters).to.have.lengthOf(1)
+    it('should add the transformer to formatter', function() {
+      formatter.addTransformer({
+        name: 'italic',
+        symbol: '*',
+        transformer: text => `<i>${text}</i>`
+      })
+      expect(formatter.transformers).to.have.lengthOf(1)
     })
   })
 

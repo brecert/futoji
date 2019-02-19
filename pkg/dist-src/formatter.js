@@ -1,17 +1,29 @@
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
+/**
+ * A transformer transforms what is found between the symbols
+ */
+
+/**
+ * The formatter class contains transformers to transform and format code
+ */
 export default class Formatter {
   constructor() {
-    _defineProperty(this, "formatters", []);
+    _defineProperty(this, "transformers", []);
   }
 
-  addFormat(name, symbol, cb) {
-    this.formatters.push({
-      name: name,
-      symbol: symbol,
-      cb: cb
-    });
+  /**
+   * Define the symbol and the transformer
+   * Add a transformer to transform code when formatting text
+   * Transformers are are used in the order added so make sure to add transformer that may have conflicting syntax in the correct order
+   */
+  addTransformer(params) {
+    this.transformers.push(params);
   }
+  /**
+   * transform and format the text
+   */
+
 
   format(text) {
     let pos = 0;
@@ -39,38 +51,46 @@ export default class Formatter {
     }
 
     while (pos < text.length) {
-      let matches = this.formatters.filter(f => {
-        return f.symbol.startsWith(text[pos]);
+      let matches = this.transformers.filter(transformer => {
+        return transformer.symbol.startsWith(text[pos]);
       });
 
       if (matches.length > 0) {
-        let matched = matches.some(m => {
-          if (accept(m.symbol)) {
-            pos += m.symbol.length;
+        let matched = matches.some(match => {
+          let {
+            name,
+            symbol,
+            transformer
+          } = match;
+
+          if (accept(symbol)) {
+            pos += symbol.length;
             let fromPos = pos;
             let toPos = pos;
-            untilSymbol(m.symbol); // make sure the next symbol does not also match the current one
+            untilSymbol(symbol); // make sure the next symbol does not also match the current one
             // this stops `*italic**hi*` from working and makes sure there needs to be a different char inbetween
             // fixes bugs
 
-            while (accept(m.symbol, 1)) {
-              pos += m.symbol.length + 1;
-              untilSymbol(m.symbol);
+            while (accept(symbol, 1)) {
+              pos += symbol.length + 1;
+              untilSymbol(symbol);
             }
 
             toPos = pos;
 
-            if (accept(m.symbol)) {
+            if (accept(symbol)) {
               let matchedText = text.slice(fromPos, toPos);
-              let parsed = m.cb(matchedText);
+              let parsed = transformer(matchedText);
               io.push(this.format(parsed));
-              pos += m.symbol.length;
+              pos += symbol.length;
               lastSlice = pos;
               return true;
             }
 
             return false;
           }
+
+          return false;
         });
 
         if (!matched) {
