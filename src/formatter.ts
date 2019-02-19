@@ -13,6 +13,11 @@ interface ITransformer {
   symbol: string
 
   /**
+   * If the transformed text is to be transformed again
+   */
+  recursive: boolean
+
+  /**
    * The transform the text into something else
    */
   transformer: (text: string) => string
@@ -30,7 +35,9 @@ export default class Formatter {
    * Transformers are are used in the order added so make sure to add transformer that may have conflicting syntax in the correct order
    */
   addTransformer(params: ITransformer) {
-    this.transformers.push(params)
+    this.transformers.push({...{
+      recursive: true
+    },...params})
   }
 
   /**
@@ -69,7 +76,7 @@ export default class Formatter {
 
       if(matches.length > 0) {
         let matched = matches.some(match => {
-          let { name, symbol, transformer } = match
+          let { name, symbol, transformer, recursive } = match
           if(accept(symbol)) {
             pos += symbol.length
 
@@ -92,7 +99,11 @@ export default class Formatter {
               let matchedText = text.slice(fromPos, toPos)
               let parsed = transformer(matchedText)
 
-              io.push(this.format(parsed))
+              if(recursive) {
+                parsed = this.format(parsed)
+              }
+
+              io.push(parsed)
 
               pos += symbol.length
               lastSlice = pos
