@@ -11,6 +11,10 @@ interface ITransformer {
      */
     symbol: string;
     /**
+     * If the transformed text is to be transformed again
+     */
+    recursive: boolean;
+    /**
      * The transform the text into something else
      */
     transformer: (text: string) => string;

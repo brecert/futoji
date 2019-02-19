@@ -18,7 +18,11 @@ export default class Formatter {
    * Transformers are are used in the order added so make sure to add transformer that may have conflicting syntax in the correct order
    */
   addTransformer(params) {
-    this.transformers.push(params);
+    this.transformers.push({ ...{
+        recursive: true
+      },
+      ...params
+    });
   }
   /**
    * transform and format the text
@@ -60,7 +64,8 @@ export default class Formatter {
           let {
             name,
             symbol,
-            transformer
+            transformer,
+            recursive
           } = match;
 
           if (accept(symbol)) {
@@ -81,7 +86,12 @@ export default class Formatter {
             if (accept(symbol)) {
               let matchedText = text.slice(fromPos, toPos);
               let parsed = transformer(matchedText);
-              io.push(this.format(parsed));
+
+              if (recursive) {
+                parsed = this.format(parsed);
+              }
+
+              io.push(parsed);
               pos += symbol.length;
               lastSlice = pos;
               return true;

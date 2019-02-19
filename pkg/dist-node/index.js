@@ -16,6 +16,40 @@ function _defineProperty(obj, key, value) {
 
   return obj;
 }
+
+function _objectSpread(target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i] != null ? arguments[i] : {};
+    var ownKeys = Object.keys(source);
+
+    if (typeof Object.getOwnPropertySymbols === 'function') {
+      ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) {
+        return Object.getOwnPropertyDescriptor(source, sym).enumerable;
+      }));
+    }
+
+    ownKeys.forEach(function (key) {
+      _defineProperty(target, key, source[key]);
+    });
+  }
+
+  return target;
+}
+
+function _defineProperty$1(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
 /**
  * A transformer transforms what is found between the symbols
  */
@@ -27,7 +61,7 @@ function _defineProperty(obj, key, value) {
 
 class Formatter {
   constructor() {
-    _defineProperty(this, "transformers", []);
+    _defineProperty$1(this, "transformers", []);
   }
   /**
    * Define the symbol and the transformer
@@ -37,7 +71,9 @@ class Formatter {
 
 
   addTransformer(params) {
-    this.transformers.push(params);
+    this.transformers.push(_objectSpread({}, {
+      recursive: true
+    }, params));
   }
   /**
    * transform and format the text
@@ -78,7 +114,8 @@ class Formatter {
         let matched = matches.some(match => {
           let name = match.name,
               symbol = match.symbol,
-              transformer = match.transformer;
+              transformer = match.transformer,
+              recursive = match.recursive;
 
           if (accept(symbol)) {
             pos += symbol.length;
@@ -98,7 +135,12 @@ class Formatter {
             if (accept(symbol)) {
               let matchedText = text.slice(fromPos, toPos);
               let parsed = transformer(matchedText);
-              io.push(this.format(parsed));
+
+              if (recursive) {
+                parsed = this.format(parsed);
+              }
+
+              io.push(parsed);
               pos += symbol.length;
               lastSlice = pos;
               return true;
