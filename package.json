@@ -21,7 +21,8 @@
   "scripts": {
     "build": "pack build",
     "test": "mocha --require ts-node/register test/**/*.spec.ts",
-    "package": "yarn build && git add pkg && git commit -m %npm_package_version% && np --contents=pkg"
+    "preversion": "yarn build && yarn test",
+    "postversion": "git add pkg && git push --tags && yarn publish pkg --auto --new-version %npm_package_version% && git push && echo \"Successfully released version %npm_package_version%!\""
   },
   "devDependencies": {
     "@babel/core": "^7.3.3",
