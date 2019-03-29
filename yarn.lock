@@ -722,9 +722,9 @@
     standard-pkg "^0.4.0"
 
 "@pika/types@^0.3.3", "@pika/types@^0.3.5":
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/@pika/types/-/types-0.3.9.tgz#4356dcfdc115c5371bc0b96a31d12e4e506ceb53"
-  integrity sha512-hzc0IHPvz4sdlaXP4Gzu9x1WF6CUTxyXbiYDLzxJQP9kvp8w4raeL0TB9YVFyayy6bplTaakTIoNrayy0ApBbw==
+  version "0.3.14"
+  resolved "https://registry.yarnpkg.com/@pika/types/-/types-0.3.14.tgz#f3a6b1b5b81110d5f795750e6ec4ffad6cfe074a"
+  integrity sha512-DhaiWNyfuiausuhkIJug/bSKqmQQjYcgZqXMDvT3fjRN+69/NLsG7Ihfhfi+64R53XQUf/prBe4GzL43K/01Pw==
 
 "@types/chai@^4.1.7":
   version "4.1.7"
@@ -2713,6 +2713,11 @@ type-detect@^4.0.0, type-detect@^4.0.5:
   version "4.0.8"
   resolved "https://registry.yarnpkg.com/type-detect/-/type-detect-4.0.8.tgz#7646fb5f18871cfbb7749e69bd39a6388eb7450c"
   integrity sha512-0fr/mIH1dlO+x7TlcMy+bIDqKPsw/70tVyeHW787goQjhmqaZe10uwLujubK9q9Lg6Fiho1KUKDYz0Z7k7g5/g==
+
+type-fest@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-0.3.0.tgz#1eb4a83c4ee233afd59d4db3faef44fecee0e9a2"
+  integrity sha512-fg3sfdDdJDtdHLUpeGsf/fLyG1aapk6zgFiYG5+MDUPybGrJemH4SLk5tP7hGRe8ntxjg0q5LYW53b6YpJIQ9Q==
 
 typescript@^3.0.0, typescript@^3.3.3:
   version "3.3.3"
