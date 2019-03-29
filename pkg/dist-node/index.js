@@ -16,40 +16,6 @@ function _defineProperty(obj, key, value) {
 
   return obj;
 }
-
-function _objectSpread(target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i] != null ? arguments[i] : {};
-    var ownKeys = Object.keys(source);
-
-    if (typeof Object.getOwnPropertySymbols === 'function') {
-      ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) {
-        return Object.getOwnPropertyDescriptor(source, sym).enumerable;
-      }));
-    }
-
-    ownKeys.forEach(function (key) {
-      _defineProperty(target, key, source[key]);
-    });
-  }
-
-  return target;
-}
-
-function _defineProperty$1(obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
-  }
-
-  return obj;
-}
 /**
  * A transformer transforms what is found between the symbols
  */
@@ -61,7 +27,7 @@ function _defineProperty$1(obj, key, value) {
 
 class Formatter {
   constructor() {
-    _defineProperty$1(this, "transformers", []);
+    _defineProperty(this, "transformers", []);
   }
   /**
    * Define the symbol and the transformer
@@ -71,8 +37,10 @@ class Formatter {
 
 
   addTransformer(params) {
-    this.transformers.push(_objectSpread({}, {
-      recursive: true
+    this.transformers.push(Object.assign({
+      recursive: true,
+      open: params.symbol,
+      close: params.symbol || params.open
     }, params));
   }
   /**
@@ -88,8 +56,8 @@ class Formatter {
 
     function accept(string, offset = 0) {
       let pt = pos + offset;
-      return string.split('').every((c, i) => {
-        return text[pt + i] === c;
+      return string.split('').every((char, i) => {
+        return text[pt + i] === char;
       });
     } // next char until a symbol is matched
 
@@ -106,33 +74,35 @@ class Formatter {
     }
 
     while (pos < text.length) {
+      // return all transformers that start with the current char
       let matches = this.transformers.filter(transformer => {
-        return transformer.symbol.startsWith(text[pos]);
+        return transformer.open.startsWith(text[pos]);
       });
 
       if (matches.length > 0) {
         let matched = matches.some(match => {
           let name = match.name,
-              symbol = match.symbol,
+              open = match.open,
+              close = match.close,
               transformer = match.transformer,
               recursive = match.recursive;
 
-          if (accept(symbol)) {
-            pos += symbol.length;
+          if (accept(open)) {
+            pos += open.length;
             let fromPos = pos;
             let toPos = pos;
-            untilSymbol(symbol); // make sure the next symbol does not also match the current one
+            untilSymbol(close); // make sure the next symbol does not also match the current one
             // this stops `*italic**hi*` from working and makes sure there needs to be a different char inbetween
             // fixes bugs
 
-            while (accept(symbol, 1)) {
-              pos += symbol.length + 1;
-              untilSymbol(symbol);
+            while (accept(close, 1)) {
+              pos += open.length + 1;
+              untilSymbol(close);
             }
 
             toPos = pos;
 
-            if (accept(symbol)) {
+            if (accept(close)) {
               let matchedText = text.slice(fromPos, toPos);
               let parsed = transformer(matchedText);
 
@@ -141,7 +111,7 @@ class Formatter {
               }
 
               io.push(parsed);
-              pos += symbol.length;
+              pos += close.length;
               lastSlice = pos;
               return true;
             }
@@ -167,7 +137,4 @@ class Formatter {
 
 }
 
-let futoji = new Formatter();
-
-exports.default = futoji;
-exports.Formatter = Formatter;
+exports.default = Formatter;

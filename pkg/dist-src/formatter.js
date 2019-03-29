@@ -18,11 +18,11 @@ export default class Formatter {
    * Transformers are are used in the order added so make sure to add transformer that may have conflicting syntax in the correct order
    */
   addTransformer(params) {
-    this.transformers.push({ ...{
-        recursive: true
-      },
-      ...params
-    });
+    this.transformers.push(Object.assign({
+      recursive: true,
+      open: params.symbol,
+      close: params.symbol || params.open
+    }, params));
   }
   /**
    * transform and format the text
@@ -37,8 +37,8 @@ export default class Formatter {
 
     function accept(string, offset = 0) {
       let pt = pos + offset;
-      return string.split('').every((c, i) => {
-        return text[pt + i] === c;
+      return string.split('').every((char, i) => {
+        return text[pt + i] === char;
       });
     } // next char until a symbol is matched
 
@@ -55,35 +55,37 @@ export default class Formatter {
     }
 
     while (pos < text.length) {
+      // return all transformers that start with the current char
       let matches = this.transformers.filter(transformer => {
-        return transformer.symbol.startsWith(text[pos]);
+        return transformer.open.startsWith(text[pos]);
       });
 
       if (matches.length > 0) {
         let matched = matches.some(match => {
           let {
             name,
-            symbol,
+            open,
+            close,
             transformer,
             recursive
           } = match;
 
-          if (accept(symbol)) {
-            pos += symbol.length;
+          if (accept(open)) {
+            pos += open.length;
             let fromPos = pos;
             let toPos = pos;
-            untilSymbol(symbol); // make sure the next symbol does not also match the current one
+            untilSymbol(close); // make sure the next symbol does not also match the current one
             // this stops `*italic**hi*` from working and makes sure there needs to be a different char inbetween
             // fixes bugs
 
-            while (accept(symbol, 1)) {
-              pos += symbol.length + 1;
-              untilSymbol(symbol);
+            while (accept(close, 1)) {
+              pos += open.length + 1;
+              untilSymbol(close);
             }
 
             toPos = pos;
 
-            if (accept(symbol)) {
+            if (accept(close)) {
               let matchedText = text.slice(fromPos, toPos);
               let parsed = transformer(matchedText);
 
@@ -92,7 +94,7 @@ export default class Formatter {
               }
 
               io.push(parsed);
-              pos += symbol.length;
+              pos += close.length;
               lastSlice = pos;
               return true;
             }
