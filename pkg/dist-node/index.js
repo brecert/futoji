@@ -40,7 +40,8 @@ class Formatter {
     this.transformers.push(Object.assign({
       recursive: true,
       open: params.symbol,
-      close: params.symbol || params.open
+      close: params.symbol || params.open,
+      validate: text => true
     }, params));
   }
   /**
@@ -85,6 +86,7 @@ class Formatter {
               open = match.open,
               close = match.close,
               transformer = match.transformer,
+              validate = match.validate,
               recursive = match.recursive;
 
           if (accept(open)) {
@@ -101,19 +103,26 @@ class Formatter {
             }
 
             toPos = pos;
+            let matchedText = text.slice(fromPos, toPos);
 
-            if (accept(close)) {
-              let matchedText = text.slice(fromPos, toPos);
-              let parsed = transformer(matchedText);
+            if (validate(matchedText)) {
+              if (accept(close)) {
+                let parsed = transformer(matchedText);
 
-              if (recursive) {
-                parsed = this.format(parsed);
+                if (recursive) {
+                  parsed = this.format(parsed);
+                }
+
+                io.push(parsed);
+                pos += close.length;
+                lastSlice = pos;
+                return true;
+              } else {
+                return false;
               }
-
-              io.push(parsed);
-              pos += close.length;
-              lastSlice = pos;
-              return true;
+            } else {
+              pos = fromPos;
+              return false;
             }
 
             return false;
