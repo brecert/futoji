@@ -144,19 +144,27 @@ export default class Formatter {
             toPos = pos
             let matchedText = text.slice(fromPos, toPos)
 
-            if(accept(close) && validate(matchedText)) {
-              let parsed = transformer(matchedText)
+            if(validate(matchedText)) {
+              if(accept(close)) {
+                let parsed = transformer(matchedText)
 
-              if(recursive) {
-                parsed = this.format(parsed)
+                if(recursive) {
+                  parsed = this.format(parsed)
+                }
+
+                io.push(parsed)
+
+                pos += close.length
+                lastSlice = pos
+                return true
+              } else {
+                return false
               }
-
-              io.push(parsed)
-
-              pos += close.length
-              lastSlice = pos
-              return true
+            } else {
+              pos = fromPos
+              return false 
             }
+
 
             return false
           }

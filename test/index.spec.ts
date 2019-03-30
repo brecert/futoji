@@ -128,7 +128,7 @@ describe('Formatter', function() {
 
     it('should format with a validator', function() {
       expect(validator.format(':cake:')).to.equal('<@cake>')
-      expect(validator.format(': : :cake: : :')).to.equal(': : <@cake> : :')
+      expect(validator.format(': :cake: :')).to.equal(': <@cake> :')
     })
 
     it('should not format with a validator', function() {
