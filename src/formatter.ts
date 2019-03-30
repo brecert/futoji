@@ -26,6 +26,12 @@ interface Transformer {
   recursive: boolean
 
   /**
+   * The function to validate if the text should be transformed
+   * if the validation is false the result will be ignored
+   */
+  validate: (text: string) => boolean
+
+  /**
    * The function to transform the text into something else
    */
   transformer: (text: string) => string
@@ -48,6 +54,12 @@ type TransformerOptions = Merge<Transformer, {
    */
   close?: string
 
+   /**
+   * The function to validate if the text should be transformed
+   * if the validation is false the result will be ignored
+   */
+  validate?: (text: string) => boolean
+
   /**
    * If the transformed text is to be transformed again
    */
@@ -69,7 +81,8 @@ export default class Formatter {
     this.transformers.push(Object.assign({
       recursive: true,
       open: <string>(params.symbol),
-      close: <string>(params.symbol || params.open)
+      close: <string>(params.symbol || params.open),
+      validate: (text: string) => true
     }, params))
   }
 
@@ -111,7 +124,7 @@ export default class Formatter {
 
       if(matches.length > 0) {
         let matched = matches.some(match => {
-          let { name, open, close, transformer, recursive } = match
+          let { name, open, close, transformer, validate, recursive } = match
           if(accept(open)) {
             pos += open.length
 
@@ -129,9 +142,9 @@ export default class Formatter {
             }
 
             toPos = pos
+            let matchedText = text.slice(fromPos, toPos)
 
-            if(accept(close)) {
-              let matchedText = text.slice(fromPos, toPos)
+            if(accept(close) && validate(matchedText)) {
               let parsed = transformer(matchedText)
 
               if(recursive) {

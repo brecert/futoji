@@ -5,6 +5,7 @@ import { expect } from 'chai'
 describe('Formatter', function() {
   let markdown = new Formatter()
   let openClose = new Formatter()
+  let validator = new Formatter()
 
   it('should be created', function() {
     expect(markdown).to.exist
@@ -65,6 +66,15 @@ describe('Formatter', function() {
         transformer: text => `[green:${text}]`
       })
     })
+
+    it('should add a transformer that has a validator', function() {
+      validator.addTransformer({
+        name: "emoji_name",
+        symbol: ':',
+        validate: text => /^[A-Z,a-z]+$/.test(text),
+        transformer: text => `<@${text}>`
+      })
+    })
   })
 
   describe('#format()', function() {
@@ -114,6 +124,15 @@ describe('Formatter', function() {
       expect(openClose.format('>message ')).to.equal('>message ')
 
       expect(openClose.format('<smile>> message ')).to.equal('<smile>> message ')    
+    })
+
+    it('should format with a validator', function() {
+      expect(validator.format(':cake:')).to.equal('<@cake>')
+      expect(validator.format(': : :cake: : :')).to.equal(': : <@cake> : :')
+    })
+
+    it('should not format with a validator', function() {
+      expect(validator.format(':large_cake:')).to.equal(':large_cake:')
     })
   })
 })
