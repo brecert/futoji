@@ -77,8 +77,8 @@ suite
 .add('Formatter#formatRegex', function() {
   futoji.formatRegex(text)
 })
-.on('cycle', function(event: any) {
-  console.log(String(event.target));
+.on('cycle', function(event: Benchmark.Event) {
+  console.log(String(event.target))
 })
 .on('complete', function(this: any) {
   console.log('Fastest is ' + this.filter('fastest').map('name'));

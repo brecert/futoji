@@ -112,16 +112,21 @@ export default class Formatter {
     }, params))
   }
 
+  /**
+   * slower than format but supports regex
+   * much simpler
+   */
   formatRegex(text: string): string {
     let pos = 0
     let lastPos = 0
     let io: string[] = []
 
+    function normalizePattern(pattern: string | RegExp) {
+      return pattern instanceof RegExp ? pattern.source : pattern.replace(/(.)/, "\\$1")
+    }
+
     while(pos < text.length) {
       let anyMatched = this.transformers.some(transformer => {
-        function normalizePattern(pattern: string | RegExp) {
-          return pattern instanceof RegExp ? pattern.source : pattern.replace(/(.)/, "\\$1")
-        }
 
         let matcher = new RegExp(`^${normalizePattern(transformer.open)}(.+?)${normalizePattern(transformer.close)}`)
 
@@ -179,16 +184,20 @@ export default class Formatter {
     // if the next part of the text is the string
     // todo: change to slice or something
     function accept(string: string, offset = 0) {
-      let pt = pos + offset
-      return string.split('').every((char, i) => {
-        return text[pt + i] === char
-      })
+      return text.startsWith(string, pos + offset)
     }
 
     // next char until a symbol is matched
     function untilSymbol(symbol: string) {
-      while(!accept(symbol) && pos < text.length) {
-        pos += 1
+      // while(!accept(symbol) && pos < text.length) {
+      //   pos += 1
+      // }
+
+      let i = text.indexOf(symbol, pos)
+      if(i < 0) {
+        pos = text.length
+      } else {
+        pos = i
       }
     }
 
@@ -202,15 +211,17 @@ export default class Formatter {
       // return all transformers that start with the current char
       let matches = this.transformers.filter(transformer => {
         if(typeof transformer.open === "string") {
-          return transformer.open.startsWith(text[pos])
+          return text.indexOf(transformer.open, pos) === pos
         } else {
           return true
         }
       })
 
       if(matches.length > 0) {
-        let matched = matches.some(match => {
-          let { name, open, close, transformer, validate, recursive } = match
+        const matched = matches.some(match => {
+          const { name, open, close, transformer, padding, validate, recursive } = match
+
+          // todo: remove
           if(open instanceof RegExp || close instanceof RegExp) {
             let matcher = new RegExp(`^${open instanceof RegExp ? open.source : open}(.+?)${close instanceof RegExp ? close.source : close}`)
             let rmatch = matcher.exec(text)
@@ -237,9 +248,11 @@ export default class Formatter {
             // make sure the next symbol does not also match the current one
             // this stops `*italic**hi*` from working and makes sure there needs to be a different char inbetween
             // fixes bugs
-            while(accept(close, 1)) {
-              pos += open.length + 1
-              untilSymbol(close)
+            if(padding) {
+              while(accept(close, 1)) {
+                pos += open.length + 1
+                untilSymbol(close)
+              }
             }
 
             toPos = pos
