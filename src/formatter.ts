@@ -3,7 +3,7 @@ import { RequireAtLeastOne, Merge } from 'type-fest';
 /**
  * A transformer transforms what is found between the symbols
  */
-interface Transformer {
+export interface Transformer {
 
   /**
    * note: currently unused 
@@ -37,10 +37,9 @@ interface Transformer {
   transformer: (text: string) => string
 }
 
-type TransformerOptions = Merge<Transformer, {
+export type TransformerOptions = Merge<Transformer, {
   /**
-   * @depricated
-   * please use open instead, symbol is depricated
+   * symbol sets both open and close
    */
   symbol?: string
 
