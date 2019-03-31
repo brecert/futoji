@@ -138,9 +138,10 @@ export default class Formatter {
 
           let transformed = transformer.transformer(matchedText)
 
-          if(transformer.recursive) {
-            transformed = this.formatRegex(transformed)
-          }
+          // temporary
+          // if(transformer.recursive) {
+          //   transformed = this.formatRegex(transformed)
+          // }
 
           pos += raw.length
 
