@@ -22,7 +22,7 @@ describe('Formatter', function() {
       expect(markdown.transformers).to.have.lengthOf(1)
     })
 
-    it('should add a non recursive block transformer to the formatter', function() {
+    it('should add a non recursive ', function() {
       markdown.addTransformer({
         name: 'block',
         symbol: '`',
@@ -73,6 +73,15 @@ describe('Formatter', function() {
         symbol: ':',
         validate: text => /^[A-Z,a-z]+$/.test(text),
         transformer: text => `<@${text}>`
+      })
+    })
+
+    it('should add a transformer that uses regex', function() {
+      markdown.addTransformer({
+        name: 'header',
+        open: /#{1,6} /,
+        close: /\n/,
+        transformer: text => `<h1>${text.trim()}</h1>`
       })
     })
   })
@@ -133,6 +142,73 @@ describe('Formatter', function() {
 
     it('should not format with a validator', function() {
       expect(validator.format(':large_cake:')).to.equal(':large_cake:')
+    })
+
+    it('should format using regex', function() {
+      expect(markdown.format('### hi\n')).to.equal('<h1>hi</h1>')
+    })
+  })
+
+  describe('#formatRegex()', function() {
+    it('should formatRegex', function() {
+      expect(markdown.formatRegex('*italic text*')).to.equal('<i>italic text</i>')
+    })
+
+    it('should formatRegex with normal text', function() {
+      expect(markdown.formatRegex('normal text *italic text*')).to.equal('normal text <i>italic text</i>')
+    })
+
+    it('should formatRegex with different transformers', function() {
+      expect(markdown.formatRegex('`block text`')).to.equal('<code>block text</code>')
+    })
+
+    it('should not formatRegex recursively if recursive is not enabled', function() {
+      expect(markdown.formatRegex('`block text *not italic text*`')).to.equal('<code>block text *not italic text*</code>')
+    })
+
+    it('should formatRegex using open', function() {
+      expect(openClose.formatRegex('~stuff~')).to.equal('[tilda:stuff]')
+    })
+
+    it('should formatRegex using open and close', function() {
+      expect(openClose.formatRegex('<smile>')).to.equal('[emoji:smile]')
+    })
+
+    it('should formatRegex using open and close recursively', function() {
+      expect(openClose.formatRegex('<smile~stuff~>')).to.equal('[emoji:smile[tilda:stuff]]')
+      expect(openClose.formatRegex('~stuff<smile>~')).to.equal('[tilda:stuff[emoji:smile]]')
+      expect(openClose.formatRegex('<~smile stuff~>')).to.equal('[emoji:[tilda:smile stuff]]')
+    })
+
+    it('should formatRegex using close with a space', function() {
+      expect(openClose.formatRegex('#title')).to.equal('#title')
+      expect(openClose.formatRegex('#title ')).to.equal('[header:title]')
+    })
+
+    it('should formatRegex with a colliding transformer that closes with a space', function() {
+      expect(openClose.formatRegex('> message ')).to.equal('[green:message]')
+      expect(openClose.formatRegex('<smile> > message ')).to.equal('[emoji:smile] [green:message]')    
+    })
+
+    it('should not formatRegex with a colliding transformer that closes with a space', function() {
+      expect(openClose.formatRegex('>message')).to.equal('>message')
+      expect(openClose.formatRegex('> message')).to.equal('> message')
+      expect(openClose.formatRegex('>message ')).to.equal('>message ')
+
+      expect(openClose.formatRegex('<smile>> message ')).to.equal('<smile>> message ')    
+    })
+
+    it('should formatRegex with a validator', function() {
+      expect(validator.formatRegex(':cake:')).to.equal('<@cake>')
+      expect(validator.formatRegex(': :cake: :')).to.equal(': <@cake> :')
+    })
+
+    it('should not formatRegex with a validator', function() {
+      expect(validator.formatRegex(':large_cake:')).to.equal(':large_cake:')
+    })
+
+    it('should formatRegex using regex', function() {
+      expect(markdown.formatRegex('### hi\n')).to.equal('<h1>hi</h1>')
     })
   })
 })

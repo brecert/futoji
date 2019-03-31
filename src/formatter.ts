@@ -13,12 +13,12 @@ export interface Transformer {
   /**
    * The symbols to match to start matching a transformation
    */
-  open: string
+  open: string | RegExp
 
   /**
    * The symbols to match to stop matching a transformation 
    */
-  close: string
+  close: string | RegExp
 
   /**
    * If the transformed text is to be transformed again
@@ -41,17 +41,17 @@ export type TransformerOptions = Merge<Transformer, {
   /**
    * symbol sets both open and close
    */
-  symbol?: string
+  symbol?: string | RegExp
 
   /**
    * The symbols to match to start matching a transformation
    */
-  open?: string
+  open?: string | RegExp
 
   /**
    * The symbols to match to stop matching a transformation 
    */
-  close?: string
+  close?: string | RegExp
 
    /**
    * The function to validate if the text should be transformed
@@ -83,6 +83,53 @@ export default class Formatter {
       close: <string>(params.symbol || params.open),
       validate: (text: string) => true
     }, params))
+  }
+
+  formatRegex(text: string): string {
+    let pos = 0
+    let lastPos = 0
+    let io: string[] = []
+
+    while(pos < text.length) {
+      let anyMatched = this.transformers.some(transformer => {
+        function normalizePattern(pattern: string | RegExp) {
+          return pattern instanceof RegExp ? pattern.source : pattern.replace(/(.)/, "\\$1")
+        }
+
+        let matcher = new RegExp(`^${normalizePattern(transformer.open)}(.+?)${normalizePattern(transformer.close)}`)
+        
+
+        let [ raw, matchedText ] = matcher.exec(text.slice(pos)) || [null, null]
+
+        if(raw && matchedText && transformer.validate(matchedText)) {
+          io.push(text.slice(lastPos, pos))
+          lastPos = pos
+
+          let transformed = transformer.transformer(matchedText)
+
+          if(transformer.recursive) {
+            transformed = this.formatRegex(transformed)
+          }
+
+          pos += raw.length
+          io.push(transformed)
+
+          lastPos = pos
+
+          return true
+        } else {
+          return false
+        }
+      })
+
+      if(!anyMatched) {
+        pos += 1
+      }
+    }
+    io.push(text.slice(lastPos, pos))
+    lastPos = pos
+
+    return io.join('')
   }
 
   /**
@@ -118,12 +165,31 @@ export default class Formatter {
 
       // return all transformers that start with the current char
       let matches = this.transformers.filter(transformer => {
-        return transformer.open.startsWith(text[pos])
+        if(typeof transformer.open === "string") {
+          return transformer.open.startsWith(text[pos])
+        } else {
+          return true
+        }
       })
 
       if(matches.length > 0) {
         let matched = matches.some(match => {
           let { name, open, close, transformer, validate, recursive } = match
+          if(open instanceof RegExp || close instanceof RegExp) {
+            let matcher = new RegExp(`^${open instanceof RegExp ? open.source : open}(.+?)${close instanceof RegExp ? close.source : close}`)
+            let rmatch = matcher.exec(text)
+
+            // console.log(matcher, rmatch)
+
+            if(rmatch && rmatch[1] && validate(rmatch[1])) {
+              pos += rmatch[0].length
+              io.push(transformer(rmatch[1]))
+              lastSlice = pos
+            }
+
+            return false
+          }
+
           if(accept(open)) {
             pos += open.length
 
