@@ -1,7 +1,7 @@
 import { RequireAtLeastOne, Merge } from 'type-fest';
 
 /**
- * A transformer transforms what is found between the symbols
+ * a transformer transforms and formats using symbols/patters to find the start and end of a piece of text easily and formats it
  */
 export interface Transformer {
 
@@ -11,28 +11,41 @@ export interface Transformer {
   name: string
 
   /**
-   * The symbols to match to start matching a transformation
+   * the symbols to match to start matching a transformation
    */
   open: string | RegExp
 
   /**
-   * The symbols to match to stop matching a transformation 
+   * the symbols to match to stop matching a transformation 
    */
   close: string | RegExp
 
   /**
-   * If the transformed text is to be transformed again
+   * tf the transformed text is to be transformed again
    */
   recursive: boolean
 
   /**
-   * The function to validate if the text should be transformed
+   * if padding is expected to be inbetween transformers
+   * true if padding is wanted, false if it is unwanted
+   * this is to prevent potentially unwanted ambiguities
+   * for example `*italic**bold or italic?**`
+   * while the maintainer of a project may expect what can happen to an average user it may be ambiguious
+   * to help with this, it will not transform `*italic**bold or italic**` without padding
+   * for example `*italic* **bold!**` or `*italic* *italic!* *`
+   * however padding may have small performance cost for extera checks.
+   * padding only checks the same symbol however
+   */
+  padding: boolean
+
+  /**
+   * the function to validate if the text should be transformed
    * if the validation is false the result will be ignored
    */
   validate: (text: string) => boolean
 
   /**
-   * The function to transform the text into something else
+   * the function to transform the text into something else
    */
   transformer: (text: string) => string
 }
@@ -44,23 +57,36 @@ export type TransformerOptions = Merge<Transformer, {
   symbol?: string | RegExp
 
   /**
-   * The symbols to match to start matching a transformation
+   * the symbols to match to start matching a transformation
    */
   open?: string | RegExp
 
   /**
-   * The symbols to match to stop matching a transformation 
+   * the symbols to match to stop matching a transformation 
    */
   close?: string | RegExp
 
+  /**
+   * if padding is expected to be inbetween transformers
+   * true if padding is wanted, false if it is unwanted
+   * this is to prevent potentially unwanted ambiguities
+   * for example `*italic**bold or italic?**`
+   * while the maintainer of a project may expect what can happen to an average user it may be ambiguious
+   * to help with this, it will not transform `*italic**bold or italic**` without padding
+   * for example `*italic* **bold!**` or `*italic* *italic!* *`
+   * however padding may have small performance cost for extera checks.
+   * padding only checks the same symbol however
+   */
+  padding?: boolean
+
    /**
-   * The function to validate if the text should be transformed
+   * the function to validate if the text should be transformed
    * if the validation is false the result will be ignored
    */
   validate?: (text: string) => boolean
 
   /**
-   * If the transformed text is to be transformed again
+   * if the transformed text is to be transformed again
    */
   recursive?: boolean
 }>
@@ -72,7 +98,7 @@ export default class Formatter {
   transformers: Transformer[] = []
 
   /**
-   * Define the symbol and the transformer
+   * define the symbol and the transformer
    * Add a transformer to transform code when formatting text
    * Transformers are are used in the order added so make sure to add transformer that may have conflicting syntax in the correct order
    */
@@ -81,6 +107,7 @@ export default class Formatter {
       recursive: true,
       open: <string>(params.symbol),
       close: <string>(params.symbol || params.open),
+      padding: true,
       validate: (text: string) => true
     }, params))
   }
@@ -97,7 +124,6 @@ export default class Formatter {
         }
 
         let matcher = new RegExp(`^${normalizePattern(transformer.open)}(.+?)${normalizePattern(transformer.close)}`)
-        
 
         let [ raw, matchedText ] = matcher.exec(text.slice(pos)) || [null, null]
 
@@ -112,9 +138,19 @@ export default class Formatter {
           }
 
           pos += raw.length
+
+          if(transformer.padding) {
+            let close = new RegExp(normalizePattern(transformer.close))
+            if(close.test(text[pos])) {
+              pos += 1
+              return false
+            }
+          }
+
           io.push(transformed)
 
           lastPos = pos
+
 
           return true
         } else {
